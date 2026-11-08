@@ -1,0 +1,6 @@
+{
+  "name": "NexusLedger Enterprise Dark",
+  "description": "Next-Gen Automated Smart Contract Governance, Bento Grid, 3D Cryptographic Node, and User Backend Gateway.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
