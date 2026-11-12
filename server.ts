@@ -263,6 +263,146 @@ app.post('/api/ai/self-evolve-design', async (req, res) => {
   }
 });
 
+// WORK 4: NexusLedger / CRD-Web OFFLINE DATA CONTRACT API
+// ==========================================
+
+let work4Mode: 'OFFLINE_MOCK' | 'CMS2_LIVE' = 'OFFLINE_MOCK';
+const idempotencyStore = new Map<string, { timestamp: number; response: any }>();
+
+const WORK4_STANDARD_CATEGORIES = [
+  { code: "C01", rpt_prefix: "CLT-003-02", name: "ผู้กู้ 2 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "FOUND", record_count: 12, pdf_pages: 12, mock_preview_url: "mock://a6-preview/C01" },
+  { code: "C02", rpt_prefix: "CLT-004-02", name: "ผู้กู้ร่วม 2 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "FOUND", record_count: 5, pdf_pages: 5, mock_preview_url: "mock://a6-preview/C02" },
+  { code: "C03", rpt_prefix: "CLT-004-02", name: "ผู้ค้ำ 2 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "SKIPPED_EMPTY", record_count: 0, pdf_pages: 0, mock_preview_url: null },
+  { code: "C04", rpt_prefix: "CLT-005-02", name: "ผู้กู้ 4 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "FOUND", record_count: 8, pdf_pages: 8, mock_preview_url: "mock://a6-preview/C04" },
+  { code: "C05", rpt_prefix: "CLT-006-02", name: "ผู้กู้ร่วม 4 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "SKIPPED_EMPTY", record_count: 0, pdf_pages: 0, mock_preview_url: null },
+  { code: "C06", rpt_prefix: "CLT-006-02", name: "ผู้ค้ำ 4 งวด", form_type: "ก.2/ค.2 + EMS A6", status: "FOUND", record_count: 3, pdf_pages: 3, mock_preview_url: "mock://a6-preview/C06" },
+  { code: "C07", rpt_prefix: "CLT-007-02", name: "ผู้กู้ 5 งวด", form_type: "ใบฟ้า EMS A6", status: "FOUND", record_count: 15, pdf_pages: 15, mock_preview_url: "mock://a6-preview/C07" },
+  { code: "C08", rpt_prefix: "CLT-008-02", name: "ผู้กู้ร่วม 5 งวด", form_type: "ใบฟ้า EMS A6", status: "FOUND", record_count: 4, pdf_pages: 4, mock_preview_url: "mock://a6-preview/C08" },
+  { code: "C09", rpt_prefix: "CLT-008-02", name: "ผู้ค้ำ 5 งวด", form_type: "ใบฟ้า EMS A6", status: "ERROR", record_count: 0, pdf_pages: 0, error_code: "MOCK_TEST_READ_ERROR", mock_preview_url: null }
+];
+
+// Endpoint 1: GET /api/work4/status?year=2026&month=11
+app.get('/api/work4/status', (req, res) => {
+  const year = String(req.query.year || '2026');
+  const month = String(req.query.month || '11');
+  const monthNames: Record<string, string> = {
+    '01': 'มกราคม', '02': 'กุมภาพันธ์', '03': 'มีนาคม', '04': 'เมษายน',
+    '05': 'พฤษภาคม', '06': 'มิถุนายน', '07': 'กรกฎาคม', '08': 'สิงหาคม',
+    '09': 'กันยายน', '10': 'ตุลาคม', '11': 'พฤศจิกายน', '12': 'ธันวาคม'
+  };
+  const paddedMonth = month.padStart(2, '0');
+  const monthLabel = `${monthNames[paddedMonth] || 'พฤศจิกายน'} ${year}`;
+
+  const printerStatus = work4Mode === 'OFFLINE_MOCK' ? {
+    host: "CMS-2 (OFFLINE_SIMULATED)",
+    printer_name: "Default Windows A6 Printer (Simulated)",
+    is_ready: false,
+    message: "CMS-2 ออฟไลน์ — เปิดโหมดพรีวิวและทดสอบ UI จำลอง (ล็อกปุ่มสั่งพิมพ์จริง)"
+  } : {
+    host: "CMS-2 (ONLINE_LIVE)",
+    printer_name: "Brother/HP Laser A6 (Windows Spooler Active)",
+    is_ready: true,
+    message: "CMS-2 ออนไลน์ — ระบบ Spooler พร้อมรับคิวพิมพ์จริงทันที"
+  };
+
+  return res.json({
+    mode: work4Mode,
+    task_id: "CRD-WORK4-PRINT-FORMAT-NEW-20261112",
+    selected_year: year,
+    selected_month: month,
+    month_label: monthLabel,
+    printer_status: printerStatus,
+    categories: WORK4_STANDARD_CATEGORIES
+  });
+});
+
+// Endpoint 2: POST /api/work4/preview
+app.post('/api/work4/preview', (req, res) => {
+  const { year, month, category_code, margin_top_mm = 0, margin_left_mm = 0 } = req.body;
+  const cat = WORK4_STANDARD_CATEGORIES.find(c => c.code === category_code);
+  if (!cat) {
+    return res.status(404).json({ status: 'ERROR', message: `Category ${category_code} not found` });
+  }
+
+  const totalPages = cat.pdf_pages || 1;
+  return res.json({
+    status: "PREVIEW_READY",
+    page_size: "A6 (105x148mm)",
+    total_pages: totalPages,
+    pdf_blob_url: `blob://nexusledger/a6/${category_code}?year=${year}&month=${month}&top=${margin_top_mm}&left=${margin_left_mm}`,
+    category_name: cat.name,
+    form_type: cat.form_type,
+    margin_top_mm,
+    margin_left_mm
+  });
+});
+
+// Endpoint 3: POST /api/work4/print (Idempotency Key guarded)
+app.post('/api/work4/print', (req, res) => {
+  const { job_id, idempotency_key, category_code, confirmed_by_owner } = req.body;
+  if (!idempotency_key) {
+    return res.status(400).json({ error: 'idempotency_key is required to prevent double-click duplicate prints' });
+  }
+
+  // Check Idempotency Cache (within 60s window)
+  const now = Date.now();
+  if (idempotencyStore.has(idempotency_key)) {
+    const cached = idempotencyStore.get(idempotency_key)!;
+    if (now - cached.timestamp < 60000) {
+      return res.json({
+        ...cached.response,
+        idempotent_replay: true,
+        message: 'ตรวจพบคำสั่งพิมพ์ซ้ำ (Idempotency Key ซ้ำ) — ระบบป้องกันการกดเบิ้ลสำเร็จ'
+      });
+    }
+  }
+
+  let responsePayload: any;
+  if (work4Mode === 'OFFLINE_MOCK') {
+    responsePayload = {
+      job_id: job_id || `JOB-${Date.now()}`,
+      status: "BLOCKED_CMS2_OFFLINE",
+      message: "เครื่อง CMS-2 ออฟไลน์ ไม่สามารถส่งคิวพิมพ์จริงได้"
+    };
+  } else {
+    responsePayload = {
+      job_id: job_id || `JOB-${Date.now()}`,
+      status: "QUEUED",
+      spooler_state: "SUBMITTED",
+      message: "ส่งงานพิมพ์ออกเครื่องพิมพ์ Windows A6 สำเร็จ"
+    };
+  }
+
+  idempotencyStore.set(idempotency_key, { timestamp: now, response: responsePayload });
+  return res.json(responsePayload);
+});
+
+// Helper Endpoint: POST /api/work4/toggle-mode
+app.post('/api/work4/toggle-mode', (req, res) => {
+  work4Mode = work4Mode === 'OFFLINE_MOCK' ? 'CMS2_LIVE' : 'OFFLINE_MOCK';
+  const printerStatus = work4Mode === 'OFFLINE_MOCK' ? {
+    host: "CMS-2 (OFFLINE_SIMULATED)",
+    printer_name: "Default Windows A6 Printer (Simulated)",
+    is_ready: false,
+    message: "CMS-2 ออฟไลน์ — เปิดโหมดพรีวิวและทดสอบ UI จำลอง (ล็อกปุ่มสั่งพิมพ์จริง)"
+  } : {
+    host: "CMS-2 (ONLINE_LIVE)",
+    printer_name: "Brother/HP Laser A6 (Windows Spooler Active)",
+    is_ready: true,
+    message: "CMS-2 ออนไลน์ — ระบบ Spooler พร้อมรับคิวพิมพ์จริงทันที"
+  };
+
+  return res.json({
+    mode: work4Mode,
+    task_id: "CRD-WORK4-PRINT-FORMAT-NEW-20261112",
+    selected_year: "2026",
+    selected_month: "11",
+    month_label: "พฤศจิกายน 2026",
+    printer_status: printerStatus,
+    categories: WORK4_STANDARD_CATEGORIES
+  });
+});
+
 async function startServer() {
   const vite = await createViteServer({
     server: { middlewareMode: true },

@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   ChevronRight,
   Zap,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
 import { GatewayConfig } from '../types';
 import { WORKSPACE_FOLDER_ID, MANIFEST_FILE_NAME } from '../services/backendGateway';
@@ -22,7 +23,7 @@ interface CleanHubDashboardProps {
   config: GatewayConfig;
   scopesCount: number;
   logCount: number;
-  onNavigate: (view: 'ai-studio' | 'scope-builder' | 'stop-gates' | 'gascode' | 'proposed-work') => void;
+  onNavigate: (view: 'ai-studio' | 'scope-builder' | 'stop-gates' | 'gascode' | 'proposed-work' | 'work4') => void;
   onOpenGatewayModal: () => void;
   onOpenLogsModal: () => void;
   onOpenExportModal?: () => void;
@@ -43,6 +44,18 @@ export const CleanHubDashboard: React.FC<CleanHubDashboardProps> = ({
 
   const menuCards = [
     {
+      id: 'work4',
+      title: 'ระบบพิมพ์หนังสือบอกกล่าว A6 (WORK 4)',
+      desc: 'พิมพ์ตรงจาก .RPT 9 หมวด (2/4/5 งวด) สู่กระดาษฟ้า A6 ไม่ผ่าน Excel พร้อมระบบพรีวิวและล็อกปุ่มกันกดเบิ้ล',
+      badge: 'OFFLINE DATA CONTRACT',
+      badgeColor: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
+      icon: <Printer className="w-6 h-6 text-blue-600 dark:text-teal-400" />,
+      onClick: () => onNavigate('work4'),
+      actionText: 'เปิดห้องพิมพ์ WORK 4',
+      hasHighlight: true,
+      highlightTag: 'NEW • OFFLINE MOCK',
+    },
+    {
       id: 'ai-studio',
       title: 'สั่ง Google AI ออกแบบ UI ในแอป',
       desc: 'ระบบอ่านโค้ดของตัวเองแบบ Introspection แล้วให้ AI (Gemini Flash) สังเคราะห์หน้าจอใหม่และสเปกขอบเขตงานได้ทันที',
@@ -51,7 +64,7 @@ export const CleanHubDashboard: React.FC<CleanHubDashboardProps> = ({
       icon: <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
       onClick: () => onNavigate('ai-studio'),
       actionText: 'สั่ง AI ออกแบบ UI',
-      hasHighlight: true, // Radiant glowing border
+      hasHighlight: false,
       highlightTag: 'อัปเดตล่าสุด',
     },
     {

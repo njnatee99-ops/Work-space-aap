@@ -18,11 +18,14 @@ import { PayloadLogsModal } from './components/PayloadLogsModal';
 import { ExportCodeModal } from './components/ExportCodeModal';
 import { AICommandDispatcher } from './components/AICommandDispatcher';
 import { LiquidNavbar, NimbusIcons, LiquidNavItem } from './components/ui/liquid-glass-navbar';
+import { Work4PrintStudio } from './components/Work4PrintStudio';
+
 import { backendGateway } from './services/backendGateway';
 import { GatewayConfig } from './types';
 import { Terminal, ArrowLeft } from 'lucide-react';
 
-export type ActiveTabType = 'overview' | 'scope-builder' | 'ai-studio' | 'stop-gates' | 'gascode' | 'proposed-work';
+export type ActiveTabType = 'overview' | 'work4' | 'scope-builder' | 'ai-studio' | 'stop-gates' | 'gascode' | 'proposed-work';
+
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTabType>('overview');
@@ -149,6 +152,7 @@ export default function App() {
               <span>← กลับหน้าหลัก (Hub)</span>
             </button>
             <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              {activeTab === 'work4' && 'WORK 4: ระบบพิมพ์หนังสือบอกกล่าว A6'}
               {activeTab === 'ai-studio' && 'Google AI UI Studio'}
               {activeTab === 'scope-builder' && 'Scope Builder'}
               {activeTab === 'stop-gates' && '16 Stop Gates Audit'}
@@ -172,6 +176,14 @@ export default function App() {
           />
         )}
 
+        {/* View: WORK 4 Direct-RPT Print & Preview Studio (A6 Edition) */}
+        {activeTab === 'work4' && (
+          <Work4PrintStudio
+            onBack={() => setActiveTab('overview')}
+            theme={theme}
+          />
+        )}
+
         {/* View 2: Self-Evolving In-App AI UI Designer & Code Introspection */}
         {activeTab === 'ai-studio' && (
           <div className="space-y-6 animate-fade-in">
@@ -186,7 +198,7 @@ export default function App() {
         {activeTab === 'scope-builder' && (
           <div className="space-y-6 animate-fade-in">
             <ScopeBuilderClean onOpenLogsModal={() => setIsLogsModalOpen(true)} />
-            <ProposedWorkGrid />
+            <ProposedWorkGrid onSelectWork={(w) => setActiveTab(w as ActiveTabType)} />
           </div>
         )}
 
@@ -200,7 +212,7 @@ export default function App() {
         {/* View 5: Proposed WORK 1–9 Grid Dedicated View */}
         {activeTab === 'proposed-work' && (
           <div className="space-y-6 animate-fade-in">
-            <ProposedWorkGrid />
+            <ProposedWorkGrid onSelectWork={(w) => setActiveTab(w as ActiveTabType)} />
           </div>
         )}
 
