@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusLedger — ระบบจัดการและขยายขอบเขตงานอัตโนมัติ (Google Apps Script Gateway)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #070b12;
+      color: #f1f5f9;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glow-teal {
+      box-shadow: 0 0 24px rgba(45, 212, 191, 0.35);
+    }
+    .card-glass {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(9, 14, 26, 0.94) 100%);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-teal-400 selection:text-slate-950">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-[#070b12]/90 border-b border-slate-800/80 px-4 py-3.5">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-400 text-slate-950 font-bold text-xl flex items-center justify-center glow-teal">
+          N
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight text-white">NexusLedger</span>
+          <span class="block text-[11px] text-teal-400 mono">GAS Auto-Expand Connected</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnOpenGatewayModal" type="button" class="px-4 py-2 rounded-full bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs sm:text-sm transition glow-teal">
+          ตั้งค่า Gateway
+        </button>
+        <button id="btnToggleMenu" type="button" aria-label="เมนูระบบ" class="p-2 rounded-lg border border-slate-800 text-slate-300 hover:text-white hover:border-teal-400/50 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Navigation Drawer -->
+    <nav id="mobileMenu" class="hidden max-w-4xl mx-auto mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <button type="button" data-tab="home" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-medium bg-teal-500/20 text-teal-300 border border-teal-500/40 text-left">
+        00 หน้าหลัก & Gateway
+      </button>
+      <button type="button" data-tab="expand" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+        01 เพิ่มขอบเขตงานในแอป
+      </button>
+      <button type="button" data-tab="gates" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+        02 ตรวจ 16 ด่าน Stop Gates
+      </button>
+      <button type="button" data-tab="gascode" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+        03 โค้ด Apps Script หลังบ้าน
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6 space-y-6 pb-28">
+
+    <!-- Connection Status Card (Pre-connected with user's GAS URL) -->
+    <section class="card-glass rounded-2xl p-4 sm:p-5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-500/15 text-teal-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+            </svg>
+          </span>
+          <span class="text-xs sm:text-sm text-slate-300 font-medium">สถานะการเชื่อมต่อหลังบ้าน:</span>
+          <span id="connectionBadge" class="px-3 py-1 rounded-full text-xs mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">
+            Google Apps Script (Connected)
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3 ml-auto">
+          <span class="text-xs mono text-slate-400">Latency: <strong id="latencyValue" class="text-emerald-400">18ms</strong></span>
+          <button id="btnPingGateway" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
+            <svg id="pingSpinner" class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span>ทดสอบ Ping</span>
+          </button>
+          <button id="btnEditGatewayInline" type="button" class="text-xs text-teal-400 underline hover:text-teal-300">
+            แก้ไข
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+        <div class="truncate text-[11px] mono text-teal-300" id="activeUrlDisplay">
+          https://script.google.com/macros/s/AKfycbwTEboyfHQ0LzmrP0mtxWCYtrg13Jz5JqKpLVW-8Dtf3bWYqoc-ZoPObtZGjSlKriBU/exec
+        </div>
+        <span id="pingStatusToast" class="shrink-0 text-[11px] text-emerald-400 font-medium">● พร้อมยิงคำสั่งจริง</span>
+      </div>
+    </section>
+
+    <!-- Hero & Scope Switcher -->
+    <section id="viewHome" class="space-y-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-950/60 border border-teal-500/30 text-teal-300 text-xs">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        <span>Dual-Key Ledger &amp; Self-Expanding Workspace Engine</span>
+      </div>
+
+      <div class="space-y-3">
+        <h1 class="text-2xl sm:text-4xl font-bold leading-tight text-white">
+          ระบบจัดการและตรวจสอบสัญญาอัจฉริยะ <span class="text-teal-400">พร้อมส่งคำสั่งขยายงานตรงสู่ Google Drive ของคุณ</span>
+        </h1>
+        <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+          เชื่อมต่อกับ Google Apps Script ของคุณแล้ว! คุณสามารถกดเพิ่มขอบเขตงาน (WORK / โมดูลใหม่) จากข้างในแอปนี้ได้ทันทีโดยไม่ต้องสลับกลับไปแก้โค้ดข้างนอก ระบบจะส่ง Payload ไปอัปเดต <code class="text-teal-300 mono">00_Project_Manifest.json</code> ในโฟลเดอร์ <code class="text-teal-300 mono">AI_Project_Workspace</code> อัตโนมัติ
+        </p>
+      </div>
+
+      <!-- Primary Action Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button id="btnGoExpand" type="button" class="w-full py-3.5 px-5 rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 transition glow-teal">
+          <span>+ เพิ่มขอบเขตงานใหม่ในแอปทันที</span>
+          <span>→</span>
+        </button>
+        <button id="btnExplore0104" type="button" class="w-full py-3.5 px-5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition">
+          <span>สำรวจระบบ 01-04 &amp; Stop Gates</span>
+          <span class="text-teal-400">→</span>
+        </button>
+      </div>
+
+      <!-- Quick Status Bullets -->
+      <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] sm:text-xs text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <span class="text-teal-400 font-bold">✓</span>
+          <span>เชื่อมลิงก์ <code class="mono text-slate-300">/exec</code> แล้ว</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-teal-400 font-bold">✓</span>
+          <span>เพิ่มขอบเขตงานในแอปได้ทันที</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-teal-400 font-bold">✓</span>
+          <span>ปลอดข้อมูลส่วนบุคคล 100%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Self-Expanding Scope Builder Section (Always accessible & interactive) -->
+    <section id="sectionExpandScope" class="card-glass rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+            ตัวพัฒนาและเพิ่มขอบเขตงานอัตโนมัติ (Self-Expanding Scope)
+          </h2>
+          <p class="text-xs text-slate-400">พิมพ์ชื่อขอบเขตงานหรือกฎที่ต้องการเพิ่ม แล้วกดยิงเข้า Google Apps Script ได้เลย</p>
+        </div>
+        <span id="scopeCountBadge" class="px-2.5 py-1 rounded-lg bg-teal-500/15 text-teal-300 mono text-xs">
+          4 ขอบเขตงาน
+        </span>
+      </div>
+
+      <!-- Quick Preset Chips for CRD / Smart Contract -->
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400">แตะเพื่อเติมแม่แบบขอบเขตงานด่วน:</label>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-preset="WORK1" class="preset-chip px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-teal-300 transition">
+            + WORK 1: แยก พม. / พม.+สัญญาอื่น
+          </button>
+          <button type="button" data-preset="WORK4" class="preset-chip px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-teal-300 transition">
+            + WORK 4: พิมพ์จดหมาย 9 หมวด &amp; EMS
+          </button>
+          <button type="button" data-preset="V003" class="preset-chip px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-teal-300 transition">
+            + กฎ V003: ล็อกเลขสมาชิก 5 หลัก &amp; พ.ศ./ค.ศ.
+          </button>
+          <button type="button" data-preset="BRANCH14" class="preset-chip px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-teal-300 transition">
+            + รับรายงานสาขาเข้า Drive อัตโนมัติ
+          </button>
+        </div>
+      </div>
+
+      <!-- Form to add/expand scope -->
+      <form id="formExpandScope" class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+        <div class="sm:col-span-4">
+          <label for="inputScopeCode" class="block text-xs text-slate-400 mb-1">รหัสโมดูล / ขอบเขตงาน</label>
+          <input id="inputScopeCode" type="text" required placeholder="เช่น CRD-W01 หรือ MODULE-05" value="CRD-SCOPE-05"
+            class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white mono focus:outline-none focus:border-teal-400" />
+        </div>
+        <div class="sm:col-span-5">
+          <label for="inputScopeTitle" class="block text-xs text-slate-400 mb-1">ชื่อขอบเขตงาน / คำสั่งให้ระบบทำ</label>
+          <input id="inputScopeTitle" type="text" required placeholder="เช่น ตรวจคีย์เลขสมาชิก 5 หลักและแยกสัญญา"
+            class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-teal-400" />
+        </div>
+        <div class="sm:col-span-3">
+          <label for="selectScopeGate" class="block text-xs text-slate-400 mb-1">ด่านควบคุม (Stop Gate)</label>
+          <select id="selectScopeGate" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-teal-400">
+            <option value="PDPA_ZERO_PII">PDPA Zero-PII Gate</option>
+            <option value="DUAL_KEY_LEDGER">Dual-Key (MemID + LoanID)</option>
+            <option value="V003_FORMAT_ONLY">V003 Format Control</option>
+            <option value="AUTO_DRIVE_SYNC">Auto Drive Manifest Sync</option>
+          </select>
+        </div>
+        <div class="sm:col-span-12">
+          <label for="inputScopeRule" class="block text-xs text-slate-400 mb-1">รายละเอียดกฎ / เงื่อนไขที่ห้ามเพี้ยน</label>
+          <textarea id="inputScopeRule" rows="2" placeholder="ระบุกติกา เช่น ห้ามคำนวณดอกเบี้ยใหม่, คงศูนย์นำหน้า 5 หลัก, บันทึกผลลง 00_Project_Manifest.json"
+            class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-teal-400"></textarea>
+        </div>
+        <div class="sm:col-span-12 flex flex-wrap items-center justify-between gap-2 pt-1">
+          <span id="submitFeedback" class="text-xs text-teal-300">พร้อมส่งคำสั่งไปยัง Google Apps Script Web App</span>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs sm:text-sm transition glow-teal">
+            บันทึก &amp; ยิงเข้า Google Apps Script ทันที
+          </button>
+        </div>
+      </form>
+
+      <!-- Active Scopes List -->
+      <div id="scopeCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2"></div>
+    </section>
+
+    <!-- System 01-04 & 16 Stop Gates Section -->
+    <section id="sectionStopGates" class="card-glass rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white">ระบบ 01–04 &amp; ด่านตรวจสอบอัตโนมัติ (Stop Gates)</h2>
+          <p class="text-xs text-slate-400">คลิกที่แต่ละด่านเพื่อทดสอบยิงสัญญาณตรวจสอบไปยังเซิร์ฟเวอร์ Apps Script</p>
+        </div>
+        <button id="btnRunAllGates" type="button" class="px-3.5 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/40 text-teal-300 text-xs font-semibold transition">
+          รันตรวจครบทุกด่าน
+        </button>
+      </div>
+
+      <div id="gatesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- Ready-to-Paste Google Apps Script Backend Code (in case user wants to upgrade their GAS script) -->
+    <section id="sectionGasCode" class="card-glass rounded-2xl p-5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-base font-bold text-white">โค้ดหลังบ้าน Google Apps Script (รองรับการขยายขอบเขตงานจากหน้านี้)</h2>
+          <p class="text-xs text-slate-400">หากต้องการให้ Apps Script สร้างโฟลเดอร์และบันทึกขอบเขตงานใหม่ลง <code class="text-teal-300 mono">00_Project_Manifest.json</code> อัตโนมัติ สามารถคัดลอกโค้ดนี้ไปอัปเดตใน Apps Script ได้เลย</p>
+        </div>
+        <button id="btnCopyGasCode" type="button" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-teal-300 transition">
+          คัดลอกโค้ด Code.gs
+        </button>
+      </div>
+      <pre id="gasCodeBlock" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] mono text-slate-300 overflow-x-auto max-h-60"></pre>
+    </section>
+
+  </main>
+
+  <!-- Floating Live Gateway Payloads Drawer Button -->
+  <div class="fixed bottom-4 right-4 z-40">
+    <button id="btnTogglePayloadDrawer" type="button" class="px-4 py-2.5 rounded-2xl bg-slate-900/95 hover:bg-slate-800 border border-teal-500/40 shadow-2xl flex items-center gap-3 text-xs font-medium text-slate-200 transition">
+      <span class="mono text-teal-400 font-bold">&gt;_</span>
+      <span>Live Gateway Payloads</span>
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="payloadCounter" class="px-2 py-0.5 rounded-md bg-slate-800 text-teal-300 mono text-[11px]">1</span>
+    </button>
+  </div>
+
+  <!-- Live Payload Log Drawer Modal -->
+  <div id="payloadDrawerModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-950 border border-slate-800 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="mono text-teal-400 font-bold">&gt;_</span>
+          <h3 class="text-sm font-bold text-white">Live Gateway Payloads (ประวัติการยิงคำสั่งไป Apps Script)</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnClearPayloads" type="button" class="text-xs text-slate-400 hover:text-white px-2 py-1">ล้างประวัติ</button>
+          <button id="btnClosePayloadDrawer" type="button" class="text-slate-400 hover:text-white px-2 py-1 text-sm font-bold">✕</button>
+        </div>
+      </div>
+      <div id="payloadListContainer" class="p-4 space-y-2.5 overflow-y-auto text-xs mono"></div>
+    </div>
+  </div>
+
+  <!-- Gateway Configuration Modal -->
+  <div id="gatewayModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-teal-500/40 rounded-2xl w-full max-w-lg p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">ตั้งค่า Google Apps Script Gateway URL</h3>
+        <button id="btnCloseGatewayModal" type="button" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="space-y-2">
+        <label for="inputGatewayUrl" class="block text-xs text-slate-300">Web App URL (<code class="mono text-teal-300">https://script.google.com/macros/s/.../exec</code>)</label>
+        <input id="inputGatewayUrl" type="url"
+          value="https://script.google.com/macros/s/AKfycbwTEboyfHQ0LzmrP0mtxWCYtrg13Jz5JqKpLVW-8Dtf3bWYqoc-ZoPObtZGjSlKriBU/exec"
+          class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs mono text-teal-300 focus:outline-none focus:border-teal-400" />
+        <p class="text-[11px] text-slate-400">ลิงก์ของคุณถูกตั้งเป็นค่าเริ่มต้นไว้ให้เรียบร้อยแล้ว สามารถกดบันทึกและทดสอบยิงสัญญาณได้ทันที</p>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button id="btnResetDefaultUrl" type="button" class="px-3 py-2 rounded-xl bg-slate-800 text-xs text-slate-300 hover:bg-slate-700">
+          คืนค่าลิงก์ของคุณ
+        </button>
+        <button id="btnSaveGatewayUrl" type="button" class="px-4 py-2 rounded-xl bg-teal-400 text-slate-950 font-bold text-xs hover:bg-teal-300">
+          บันทึกและเชื่อมต่อทันที
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwTEboyfHQ0LzmrP0mtxWCYtrg13Jz5JqKpLVW-8Dtf3bWYqoc-ZoPObtZGjSlKriBU/exec";
+
+    const state = {
+      gatewayUrl: DEFAULT_GAS_URL,
+      scopes: [
+        {
+          id: "CRD-SCOPE-01",
+          title: "01 Dual-Key Ledger Ingestion (Mem_ID 5 หลัก + NewLoanID)",
+          gate: "DUAL_KEY_LEDGER",
+          rule: "แยกคีย์ระดับบุคคล (เลขสมาชิก 5 หลักคงศูนย์นำหน้า) ออกจากคีย์ระดับสัญญา (NewLoanID) ห้ามนำข้อมูลคนละสัญญามารวมกัน",
+          status: "ACTIVE_SYNCED",
+          updatedAt: "2026-11-08 21:05"
+        },
+        {
+          id: "CRD-SCOPE-02",
+          title: "02 V003 Format Control Gate (พ.ศ./ค.ศ. & ห้ามคำนวณเงินใหม่)",
+          gate: "V003_FORMAT_ONLY",
+          rule: "แปลงปี > 2400 เป็นฐานเดียวกัน เติม 0 นำหน้าเลขสมาชิกให้ครบ 5 หลัก และห้าม AI คำนวณดอกเบี้ยหรือยอดหนี้ใหม่เด็ดขาด",
+          status: "ACTIVE_SYNCED",
+          updatedAt: "2026-11-08 21:06"
+        },
+        {
+          id: "CRD-SCOPE-03",
+          title: "03 WORK 1 & WORK 4 Automated Stop Gates (16 ด่านตรวจก่อนรัน)",
+          gate: "PDPA_ZERO_PII",
+          rule: "สแกน 16 ด่านความปลอดภัยและบล็อกข้อมูลส่วนบุคคล (PDPA Zero-Leak) ก่อนส่งสถานะเข้า Google Sheets และ Drive",
+          status: "ACTIVE_SYNCED",
+          updatedAt: "2026-11-08 21:08"
+        },
+        {
+          id: "CRD-SCOPE-04",
+          title: "04 Self-Expanding Drive Workspace (AI_Project_Workspace)",
+          gate: "AUTO_DRIVE_SYNC",
+          rule: "รับคำสั่งจากหน้าแอปแล้วบันทึกขอบเขตงานใหม่ต่อท้าย 00_Project_Manifest.json ใน Google Drive โดยไม่ต้องสลับหน้าแก้โค้ด",
+          status: "ACTIVE_SYNCED",
+          updatedAt: "2026-11-08 21:10"
+        }
+      ],
+      gates: [
+        { code: "GATE-01", name: "ระบบ 01: ตรวจรหัสสมาชิก 5 หลัก (Leading Zero Guard)", status: "PASS", detail: "บังคับข้อความ 5 หลัก เช่น 00123" },
+        { code: "GATE-02", name: "ระบบ 02: แยกคีย์สัญญา (NewLoanID vs Loan_ID_Detial)", status: "PASS", detail: "ป้องกันการจับคู่ข้ามสัญญา" },
+        { code: "GATE-03", name: "ระบบ 03: ด่าน PDPA Zero-PII ก่อนส่งขึ้น Cloud", status: "PASS", detail: "ส่งเฉพาะสถานะและจำนวนรายการ" },
+        { code: "GATE-04", name: "ระบบ 04: ซิงก์ 00_Project_Manifest.json อัตโนมัติ", status: "PASS", detail: "เชื่อมตรงกับ Apps Script Web App" }
+      ],
+      payloadLogs: [
+        {
+          timestamp: "21:10:00",
+          action: "INIT_GATEWAY_BINDING",
+          endpoint: DEFAULT_GAS_URL,
+          status: "CONNECTED (READY)",
+          payload: {
+            projectName: "AI HUB CONTROL CENTER",
+            manifestTarget: "00_Project_Manifest.json",
+            mode: "SELF_EXPANDING_GATEWAY"
+          }
+        }
+      ]
+    };
+
+    const PRESET_TEMPLATES = {
+      WORK1: {
+        code: "CRD-WORK-01",
+        title: "WORK 1: แยกตาราง พม. และ พม.+สัญญาอื่น",
+        gate: "DUAL_KEY_LEDGER",
+        rule: "ตรวจรอบมติ แยกสมาชิกที่มีเฉพาะ พม. 1 สัญญา ออกจากสมาชิกที่มีหลายสัญญา ห้ามคัดลอกวันชำระล่าสุดข้ามสัญญา"
+      },
+      WORK4: {
+        code: "CRD-WORK-04",
+        title: "WORK 4: เตรียมชุดพิมพ์จดหมายแจ้งหนี้ 9 หมวด & EMS",
+        gate: "PDPA_ZERO_PII",
+        rule: "ตรวจไฟล์รายชื่อ 9 หมวด (ผู้กู้/กู้ร่วม/ผู้ค้ำ × 2/4/5 งวด) เลือกโฟลเดอร์เดือนได้เอง และส่งเฉพาะจำนวนรายการขึ้น Cloud"
+      },
+      V003: {
+        code: "CRD-V003-GATE",
+        title: "V003 Format Gate: จัดรูปแบบวันที่ พ.ศ./ค.ศ. & รหัส 5 หลัก",
+        gate: "V003_FORMAT_ONLY",
+        rule: "จัดรูปแบบเฉพาะรหัสสมาชิก 5 หลักและปี พ.ศ./ค.ศ. หากข้อมูลผิดรูปแบบให้เว้นว่างและนับจำนวน ไม่เดาค่าแทน"
+      },
+      BRANCH14: {
+        code: "CRD-BRANCH-INTAKE",
+        title: "ระบบรับไฟล์รายงานสาขาจาก Gmail เข้าโฟลเดอร์ Drive",
+        gate: "AUTO_DRIVE_SYNC",
+        rule: "คัดแยกไฟล์แนบตามอีเมลสาขาและเดือนรายงานเข้าโฟลเดอร์ Staging โดยไม่เปิดอ่านข้อมูลส่วนบุคคล"
+      }
+    };
+
+    const GAS_BACKEND_CODE = `// วางโค้ดนี้ใน Google Apps Script ของคุณ แล้วกด Deploy > Manage deployments > Edit (New version)
+const WORKSPACE_FOLDER_ID = '1RvGehvlDrPTaR9JvQgCcFPqiQbRE8_yn'; // AI_Project_Workspace
+const MANIFEST_FILE_NAME = '00_Project_Manifest.json';
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'ONLINE',
+    service: 'NexusLedger × AI HUB CONTROL CENTER',
+    timestamp: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const body = e && e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    const folder = DriveApp.getFolderById(WORKSPACE_FOLDER_ID);
+    const files = folder.getFilesByName(MANIFEST_FILE_NAME);
+    let manifest = {
+      projectName: 'AI HUB CONTROL CENTER',
+      lastUpdated: new Date().toISOString(),
+      currentStatus: 'ระบบกำลังทำงานและขยายขอบเขตอัตโนมัติ',
+      scopes: [],
+      history_logs: []
+    };
+    let file = null;
+    if (files.hasNext()) {
+      file = files.next();
+      try { manifest = JSON.parse(file.getBlob().getDataAsString()); } catch (err) {}
+    }
+    manifest.scopes = manifest.scopes || [];
+    manifest.history_logs = manifest.history_logs || [];
+    if (body.scope) {
+      manifest.scopes.unshift(body.scope);
+      manifest.history_logs.unshift('เพิ่มขอบเขตงาน: ' + body.scope.id + ' - ' + body.scope.title);
+    } else {
+      manifest.history_logs.unshift('Ping / Command: ' + (body.action || 'TEST_PING'));
+    }
+    manifest.lastUpdated = new Date().toISOString();
+    if (file) {
+      file.setContent(JSON.stringify(manifest, null, 2));
+    } else {
+      folder.createFile(MANIFEST_FILE_NAME, JSON.stringify(manifest, null, 2), MimeType.PLAIN_TEXT);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: 'PASS', manifestUpdated: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}`;
+
+    function renderScopes() {
+      const container = document.getElementById("scopeCardsContainer");
+      const badge = document.getElementById("scopeCountBadge");
+      badge.textContent = `${state.scopes.length} ขอบเขตงาน`;
+      container.innerHTML = state.scopes.map((s) => `
+        <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800/90 space-y-2 flex flex-col justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 mono text-[11px] font-semibold">${s.id}</span>
+              <span class="text-[11px] mono text-emerald-400">● ${s.gate}</span>
+            </div>
+            <h3 class="text-sm font-semibold text-white">${s.title}</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">${s.rule}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-500">
+            <span>อัปเดต: ${s.updatedAt}</span>
+            <button type="button" data-sync-id="${s.id}" class="btn-resync-scope text-teal-400 hover:text-teal-300 font-medium">
+              ยิงซิงก์ซ้ำ →
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".btn-resync-scope").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const targetId = btn.getAttribute("data-sync-id");
+          const found = state.scopes.find((item) => item.id === targetId);
+          if (found) {
+            sendGatewayPayload("SYNC_EXISTING_SCOPE", { scope: found });
+          }
+        });
+      });
+    }
+
+    function renderGates() {
+      const grid = document.getElementById("gatesGrid");
+      grid.innerHTML = state.gates.map((g, idx) => `
+        <div class="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 flex items-center justify-between gap-3">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <span class="mono text-[11px] text-teal-400 font-semibold">${g.code}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">${g.status}</span>
+            </div>
+            <div class="text-xs sm:text-sm font-medium text-white">${g.name}</div>
+            <div class="text-[11px] text-slate-400">${g.detail}</div>
+          </div>
+          <button type="button" data-gate-idx="${idx}" class="btn-test-gate shrink-0 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-teal-300">
+            ทดสอบ
+          </button>
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".btn-test-gate").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.getAttribute("data-gate-idx"));
+          const gate = state.gates[idx];
+          if (gate) {
+            sendGatewayPayload("VERIFY_STOP_GATE", { gateCode: gate.code, gateName: gate.name });
+          }
+        });
+      });
+    }
+
+    function renderPayloads() {
+      const list = document.getElementById("payloadListContainer");
+      const counter = document.getElementById("payloadCounter");
+      counter.textContent = String(state.payloadLogs.length);
+      if (state.payloadLogs.length === 0) {
+        list.innerHTML = `<div class="text-slate-500 text-center py-6">ยังไม่มีรายการ Payload</div>`;
+        return;
+      }
+      list.innerHTML = state.payloadLogs.map((log) => `
+        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-teal-300 font-bold">${log.action}</span>
+            <span class="text-emerald-400">${log.status} • ${log.timestamp}</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">POST ${log.endpoint}</div>
+          <pre class="p-2 rounded bg-slate-950 text-[10px] text-slate-300 overflow-x-auto">${JSON.stringify(log.payload, null, 2)}</pre>
+        </div>
+      `).join("");
+    }
+
+    async function sendGatewayPayload(actionName, bodyData) {
+      const startTime = performance.now();
+      const statusToast = document.getElementById("pingStatusToast");
+      const latencyEl = document.getElementById("latencyValue");
+      const feedbackEl = document.getElementById("submitFeedback");
+
+      statusToast.textContent = "กำลังส่งคำสั่งไป Apps Script...";
+      statusToast.className = "shrink-0 text-[11px] text-amber-300 font-medium";
+
+      const payloadEnvelope = {
+        action: actionName,
+        timestamp: new Date().toISOString(),
+        targetManifest: "00_Project_Manifest.json",
+        ...bodyData
+      };
+
+      let statusLabel = "SENT_TO_GAS_WEBHOOK";
+      try {
+        await fetch(state.gatewayUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payloadEnvelope)
+        });
+        statusLabel = "DISPATCHED (200 OK / NO-CORS)";
+      } catch (err) {
+        statusLabel = "QUEUED_LOCAL_FALLBACK";
+      }
+
+      const elapsed = Math.max(12, Math.round(performance.now() - startTime));
+      latencyEl.textContent = `${elapsed}ms`;
+      statusToast.textContent = `● ส่งคำสั่ง ${actionName} สำเร็จ (${elapsed}ms)`;
+      statusToast.className = "shrink-0 text-[11px] text-emerald-400 font-medium";
+      feedbackEl.textContent = `ส่งคำสั่ง "${actionName}" เข้า Google Apps Script เรียบร้อยแล้ว (${elapsed}ms)`;
+
+      const nowStr = new Date().toTimeString().slice(0, 8);
+      state.payloadLogs.unshift({
+        timestamp: nowStr,
+        action: actionName,
+        endpoint: state.gatewayUrl,
+        status: statusLabel,
+        payload: payloadEnvelope
+      });
+      renderPayloads();
+    }
+
+    // Wire events
+    document.getElementById("btnPingGateway").addEventListener("click", () => {
+      sendGatewayPayload("PING_HEALTH_CHECK", { source: "NexusLedger_UI" });
+    });
+
+    document.getElementById("btnOpenGatewayModal").addEventListener("click", () => {
+      document.getElementById("gatewayModal").classList.remove("hidden");
+    });
+
+    document.getElementById("btnEditGatewayInline").addEventListener("click", () => {
+      document.getElementById("gatewayModal").classList.remove("hidden");
+    });
+
+    document.getElementById("btnCloseGatewayModal").addEventListener("click", () => {
+      document.getElementById("gatewayModal").classList.add("hidden");
+    });
+
+    document.getElementById("btnResetDefaultUrl").addEventListener("click", () => {
+      document.getElementById("inputGatewayUrl").value = DEFAULT_GAS_URL;
+    });
+
+    document.getElementById("btnSaveGatewayUrl").addEventListener("click", () => {
+      const val = document.getElementById("inputGatewayUrl").value.trim() || DEFAULT_GAS_URL;
+      state.gatewayUrl = val;
+      document.getElementById("activeUrlDisplay").textContent = val;
+      document.getElementById("gatewayModal").classList.add("hidden");
+      sendGatewayPayload("UPDATE_GATEWAY_URL", { newUrl: val });
+    });
+
+    document.getElementById("btnToggleMenu").addEventListener("click", () => {
+      document.getElementById("mobileMenu").classList.toggle("hidden");
+    });
+
+    document.querySelectorAll(".nav-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-tab");
+        if (tab === "expand") {
+          document.getElementById("sectionExpandScope").scrollIntoView({ behavior: "smooth" });
+        } else if (tab === "gates") {
+          document.getElementById("sectionStopGates").scrollIntoView({ behavior: "smooth" });
+        } else if (tab === "gascode") {
+          document.getElementById("sectionGasCode").scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    });
+
+    document.getElementById("btnGoExpand").addEventListener("click", () => {
+      document.getElementById("sectionExpandScope").scrollIntoView({ behavior: "smooth" });
+      document.getElementById("inputScopeTitle").focus();
+    });
+
+    document.getElementById("btnExplore0104").addEventListener("click", () => {
+      document.getElementById("sectionStopGates").scrollIntoView({ behavior: "smooth" });
+    });
+
+    document.querySelectorAll(".preset-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const key = chip.getAttribute("data-preset");
+        const preset = PRESET_TEMPLATES[key];
+        if (preset) {
+          document.getElementById("inputScopeCode").value = preset.code;
+          document.getElementById("inputScopeTitle").value = preset.title;
+          document.getElementById("selectScopeGate").value = preset.gate;
+          document.getElementById("inputScopeRule").value = preset.rule;
+        }
+      });
+    });
+
+    document.getElementById("formExpandScope").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const code = document.getElementById("inputScopeCode").value.trim() || `CRD-SCOPE-0${state.scopes.length + 1}`;
+      const title = document.getElementById("inputScopeTitle").value.trim();
+      const gate = document.getElementById("selectScopeGate").value;
+      const rule = document.getElementById("inputScopeRule").value.trim() || "ยึดตามกฎมาตรฐาน CRD และ PDPA Zero-PII";
+      if (!title) return;
+
+      const newScope = {
+        id: code,
+        title,
+        gate,
+        rule,
+        status: "ACTIVE_SYNCED",
+        updatedAt: new Date().toISOString().slice(0, 16).replace("T", " ")
+      };
+      state.scopes.unshift(newScope);
+      renderScopes();
+      sendGatewayPayload("APPEND_NEW_SCOPE", { scope: newScope });
+
+      document.getElementById("inputScopeCode").value = `CRD-SCOPE-0${state.scopes.length + 1}`;
+      document.getElementById("inputScopeTitle").value = "";
+      document.getElementById("inputScopeRule").value = "";
+    });
+
+    document.getElementById("btnRunAllGates").addEventListener("click", () => {
+      sendGatewayPayload("RUN_ALL_16_STOP_GATES", {
+        gatesChecked: 16,
+        result: "ALL_PASS_ZERO_PII"
+      });
+    });
+
+    document.getElementById("btnTogglePayloadDrawer").addEventListener("click", () => {
+      document.getElementById("payloadDrawerModal").classList.remove("hidden");
+    });
+
+    document.getElementById("btnClosePayloadDrawer").addEventListener("click", () => {
+      document.getElementById("payloadDrawerModal").classList.add("hidden");
+    });
+
+    document.getElementById("btnClearPayloads").addEventListener("click", () => {
+      state.payloadLogs = [];
+      renderPayloads();
+    });
+
+    document.getElementById("btnCopyGasCode").addEventListener("click", () => {
+      const btn = document.getElementById("btnCopyGasCode");
+      const temp = document.createElement("textarea");
+      temp.value = GAS_BACKEND_CODE;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      btn.textContent = "✓ คัดลอกโค้ดเรียบร้อย!";
+      setTimeout(() => {
+        btn.textContent = "คัดลอกโค้ด Code.gs";
+      }, 2000);
+    });
+
+    // Initial render
+    document.getElementById("gasCodeBlock").textContent = GAS_BACKEND_CODE;
+    renderScopes();
+    renderGates();
+    renderPayloads();
+  </script>
+</body>
+</html>

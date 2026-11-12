@@ -22,22 +22,19 @@ export interface PayloadLog {
   isSimulated: boolean;
 }
 
-export interface TicketForm {
-  name: string;
-  organization: string;
-  email: string;
-  contractVolume: string;
-  message: string;
+export interface ScopeItem {
+  id: string;
+  title: string;
+  gate: string;
+  rule: string;
+  status: string;
+  updatedAt: string;
 }
 
-export interface PricingPlan {
-  id: string;
+export interface StopGateItem {
+  code: string;
   name: string;
-  tagline: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  isPopular?: boolean;
-  badge?: string;
-  features: string[];
-  ctaLabel: string;
+  status: 'PASS' | 'PENDING' | 'SCANNING';
+  detail: string;
+  category: string;
 }

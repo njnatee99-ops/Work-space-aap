@@ -43,7 +43,6 @@ export const HighImpactPrimaryButton: React.FC<HighImpactPrimaryButtonProps> = (
       return;
     }
 
-    // Default behavior if actionName is specified: dispatch to User Backend Gateway
     if (actionName) {
       setIsLoading(true);
       try {
@@ -55,9 +54,9 @@ export const HighImpactPrimaryButton: React.FC<HighImpactPrimaryButtonProps> = (
   };
 
   const sizeClasses = {
-    md: 'py-2.5 px-6 text-sm',
-    lg: 'py-3.5 px-8 text-base tracking-wide',
-    xl: 'py-4 px-10 text-lg font-bold tracking-wide',
+    md: 'py-2.5 px-5 text-xs sm:text-sm font-semibold',
+    lg: 'py-3.5 px-7 text-sm sm:text-base font-bold',
+    xl: 'py-4 px-9 text-base sm:text-lg font-bold',
   };
 
   return (
@@ -66,29 +65,20 @@ export const HighImpactPrimaryButton: React.FC<HighImpactPrimaryButtonProps> = (
       onClick={handleClick}
       disabled={disabled || isLoading}
       className={`
-        relative group inline-flex items-center justify-center gap-3
-        font-semibold text-slate-950
+        relative group inline-flex items-center justify-center gap-2.5
+        text-slate-950 font-bold
         rounded-2xl
-        bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400
-        bg-[length:200%_auto]
-        hover:bg-right
+        bg-gradient-to-r from-teal-400 via-cyan-300 to-teal-400
+        hover:from-teal-300 hover:via-cyan-200 hover:to-teal-300
         cursor-pointer
         select-none
         whitespace-nowrap shrink-0
-        /* Multi-layered deep drop shadow */
-        shadow-[0_12px_30px_-5px_rgba(6,182,212,0.48),0_4px_14px_rgba(6,182,212,0.28)]
-        hover:shadow-[0_18px_38px_-4px_rgba(6,182,212,0.65),0_6px_20px_rgba(6,182,212,0.4)]
-        /* Press collapse animation */
-        active:scale-[0.96] active:translate-y-0.5 active:shadow-[0_6px_16px_rgba(6,182,212,0.35)]
-        transition-all duration-200 ease-out
+        shadow-[0_8px_25px_rgba(45,212,191,0.4)]
+        hover:shadow-[0_12px_32px_rgba(45,212,191,0.55)]
+        active:scale-[0.97] active:translate-y-0.5
+        transition-all duration-150 ease-out
         disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
-        /* Glass reflection highlight on top edge */
         overflow-hidden
-        before:absolute before:inset-x-0 before:top-0 before:h-[1.5px]
-        before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent
-        before:z-10
-        /* Subtle inner gradient shimmer */
-        after:absolute after:inset-0 after:rounded-2xl after:bg-gradient-to-b after:from-white/20 after:to-transparent after:pointer-events-none
         ${sizeClasses[size]}
         ${className}
       `}
@@ -98,7 +88,7 @@ export const HighImpactPrimaryButton: React.FC<HighImpactPrimaryButtonProps> = (
       ) : icon ? (
         <span className="shrink-0 transition-transform duration-200 group-hover:scale-110">{icon}</span>
       ) : null}
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 drop-shadow-sm">{children}</span>
     </button>
   );
 };

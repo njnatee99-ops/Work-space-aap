@@ -3,21 +3,171 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  color-scheme: dark;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  background-color: #080c14;
-  color: #f1f5f9;
+  background-color: #F8F9FA;
+  background-image: 
+    radial-gradient(at 15% 10%, rgba(255, 255, 255, 1) 0px, transparent 50%),
+    radial-gradient(at 85% 15%, rgba(245, 245, 247, 0.95) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(255, 255, 255, 1) 0px, transparent 60%),
+    radial-gradient(at 85% 85%, rgba(240, 241, 245, 0.85) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(250, 250, 252, 0.95) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #14243A;
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  font-family: 'Prompt', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 /* Tabular numbers for all metrics */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Prevent broken words in Thai */
+h1, h2, h3, h4, h5, h6 {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* CRD Design Tokens: iOS Translucent Crystal Glass Theme & Dark Mode */
+:root {
+  --background: #F8F9FA;
+  --foreground: #14243A;
+  --card: #FFFFFF;
+  --card-foreground: #14243A;
+  --popover: #FFFFFF;
+  --popover-foreground: #14243A;
+  --primary: #1D4ED8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #1D4ED8;
+  --color-primary: #1D4ED8;
+  --color-secondary: #0EA5E9;
+  --color-accent: #38BDF8;
+  --color-destructive: #EF4444;
+  --color-chart-1: #3B82F6;
+  --color-chart-2: #10B981;
+  --color-chart-3: #6366F1;
+  --color-chart-4: #EC4899;
+  --color-chart-5: #F59E0B;
+
+  --bg-color: #F6F9FD;
+  --surface-color: rgba(255, 255, 255, 0.68);
+  --primary-color: #1D4ED8;
+  --primary-hover: #1E40AF;
+  --ink-color: #14243A;
+  --muted-color: #64748B;
+  --border-color: rgba(255, 255, 255, 0.85);
+  --info-color: #2563EB;
+  --success-color: #18845B;
+  --warning-color: #B7791F;
+  --danger-color: #C2414C;
+  --hero-accent: #E8F2FF;
+}
+
+.theme-dark {
+  --bg-color: #070B12;
+  --surface-color: rgba(11, 16, 29, 0.7);
+  --primary-color: #2DD4BF;
+  --primary-hover: #14B8A6;
+  --ink-color: #F1F5F9;
+  --muted-color: #94A3B8;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --info-color: #38BDF8;
+  --success-color: #34D399;
+  --warning-color: #FBBF24;
+  --danger-color: #F87171;
+  --hero-accent: rgba(45, 212, 191, 0.15);
+}
+
+.card-crd {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  color: var(--ink-color);
+}
+
+.glow-teal {
+  box-shadow: 0 0 24px rgba(45, 212, 191, 0.35);
+}
+
+.glow-blue {
+  box-shadow: 0 4px 20px rgba(29, 78, 216, 0.25);
+}
+
+/* iPhone / iOS Translucent Liquid Crystal Glass Material */
+.card-glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow: 
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 1px 0 rgba(0, 30, 80, 0.03),
+    0 16px 40px -12px rgba(15, 35, 75, 0.06),
+    0 2px 6px -1px rgba(15, 35, 75, 0.02);
+  color: #14243A;
+}
+
+.theme-dark .card-glass,
+.dark .card-glass {
+  background: rgba(13, 21, 38, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 40px -12px rgba(0, 0, 0, 0.6);
+  color: #F1F5F9;
+}
+
+/* Radiant Glowing Button & Beacon Animations for Important Updates */
+@keyframes radiant-pulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.45), 0 0 4px rgba(255, 255, 255, 0.9), inset 0 0 8px rgba(255, 255, 255, 0.8);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(37, 99, 235, 0.75), 0 0 12px rgba(96, 165, 250, 0.6), inset 0 0 16px rgba(255, 255, 255, 0.95);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes gold-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(234, 179, 8, 0.45), 0 0 4px rgba(255, 255, 255, 0.9);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(234, 179, 8, 0.75), 0 0 10px rgba(250, 204, 21, 0.6);
+    transform: scale(1.02);
+  }
+}
+
+.glow-active-update {
+  animation: radiant-pulse 2.2s infinite ease-in-out;
+}
+
+.glow-gold-update {
+  animation: gold-pulse 2.2s infinite ease-in-out;
 }
 
 /* Custom subtle scrollbar */
@@ -26,12 +176,21 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #080c14;
+  background: #dcebf5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #94a3b8;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #64748b;
+}
+
+.theme-dark ::-webkit-scrollbar-track,
+.dark ::-webkit-scrollbar-track {
+  background: #070b12;
+}
+.theme-dark ::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
 }

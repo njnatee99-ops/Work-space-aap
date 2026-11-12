@@ -129,9 +129,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectEnterpri
           {/* Plan 2: Professional (2,900฿/mo) - MOST POPULAR WITH CYAN NEON GLOW */}
           <div className="relative rounded-3xl p-8 bg-[#0d1629] border-2 border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.35),0_0_15px_rgba(6,182,212,0.2)] flex flex-col justify-between transform md:-translate-y-2">
             {/* Cyan Neon Glow Ribbon Badge */}
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.8)] tracking-wide">
-                <Sparkles className="w-3.5 h-3.5" /> ยอดนิยม · แนะนำสำหรับโปรดักชัน
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+              <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.8)] tracking-wide whitespace-nowrap shrink-0">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" /> ยอดนิยม · แนะนำสำหรับโปรดักชัน
               </span>
             </div>
 
