@@ -3,14 +3,18 @@ import { ExternalLink, ShieldAlert, CheckCircle2, Lock, FileSpreadsheet, Layers,
 import { WORKSPACE_FOLDER_ID } from '../services/backendGateway';
 import { LiquidButton } from './ui/liquid-glass-button';
 
-export const ProposedWorkGrid: React.FC = () => {
+interface ProposedWorkGridProps {
+  onSelectWork?: (workId: string) => void;
+}
+
+export const ProposedWorkGrid: React.FC<ProposedWorkGridProps> = ({ onSelectWork }) => {
   const [activeNotice, setActiveNotice] = useState<string | null>(null);
 
   const workItems = [
     { id: 'WORK 1', title: 'แยก พม. / พม.+สัญญาอื่น', status: 'ACTIVE_SCOPE', desc: 'ตรวจรอบมติ แยกสมาชิกที่มี พม. 1 สัญญา ออกจากสมาชิกหลายสัญญา' },
     { id: 'WORK 2', title: 'ระบบสัญญาร่วม & ผู้ค้ำประกัน', status: 'PROPOSED', desc: 'ตรวจสอบการค้ำประกันไขว้และข้อจำกัดสัญญาเดี่ยว/ร่วม' },
     { id: 'WORK 3', title: 'บันทึกวันชำระและคำนวณเบี้ยปรับ', status: 'PROPOSED', desc: 'ควบคุมตามกฎ V003 ไม่คิดยอดหนี้ใหม่ คงศูนย์นำหน้า' },
-    { id: 'WORK 4', title: 'เตรียมพิมพ์จดหมาย 9 หมวด & EMS', status: 'ACTIVE_SCOPE', desc: 'ตรวจรายชื่อ 9 หมวด แยกผู้กู้/กู้ร่วม/ผู้ค้ำ × 2/4/5 งวด' },
+    { id: 'WORK 4', title: 'เตรียมพิมพ์จดหมาย 9 หมวด & EMS', status: 'ACTIVE_SCOPE', desc: 'ตรวจรายชื่อ 9 หมวด แยกผู้กู้/กู้ร่วม/ผู้ค้ำ × 2/4/5 งวด (A6 Direct RPT)' },
     { id: 'WORK 5', title: 'ระบบรับชำระผ่าน Gateway สาขา', status: 'PROPOSED', desc: 'เชื่อมต่อ Staging สรุปยอดรายวันปลอด PII' },
     { id: 'WORK 6', title: 'ออกรายงานสรุปยอดลูกหนี้คงเหลือ', status: 'PROPOSED', desc: 'แยกหมวดลูกหนี้ตามอายุหนี้และรอบมติ' },
     { id: 'WORK 7', title: 'ตรวจสอบเงื่อนไขลดหย่อนดอกเบี้ย', status: 'PROPOSED', desc: 'คำนวณสิทธิประโยชน์ตามระเบียบ CRD' },
@@ -39,7 +43,11 @@ export const ProposedWorkGrid: React.FC = () => {
     },
   ];
 
-  const handleActionClick = (title: string, isProposed: boolean) => {
+  const handleActionClick = (id: string, title: string, isProposed: boolean) => {
+    if (id === 'WORK 4' && onSelectWork) {
+      onSelectWork('work4');
+      return;
+    }
     if (isProposed) {
       setActiveNotice(`สถานะ: [PROPOSED / ยังไม่เชื่อมต่อ Production] - โมดูล "${title}" อยู่ระหว่างจัดเตรียม Source Code และรออนุมัติ Deployment ตามระเบียบ CRD`);
       setTimeout(() => setActiveNotice(null), 5000);
@@ -78,7 +86,7 @@ export const ProposedWorkGrid: React.FC = () => {
           return (
             <div
               key={item.id}
-              onClick={() => handleActionClick(item.title, !isActive)}
+              onClick={() => handleActionClick(item.id, item.title, !isActive)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
                 isActive
                   ? 'bg-blue-50/90 dark:bg-teal-950/40 border-blue-300 dark:border-teal-500/40 shadow-xs hover:border-blue-500'
