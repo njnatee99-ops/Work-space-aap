@@ -29,7 +29,7 @@ const APPSHEET_URL =
 const LIVE_JOB_CARDS: JobCardSpec[] = [
   {
     id: 'WORK1',
-    title: 'WORK 1 · ดึงเมล 14 สาขา (รอบ 21–5)',
+    title: 'WORK 1 · ดึงเมลสาขา 9+1 ศูนย์ (รอบ 21–5)',
     subtitle: 'แยก 7 โฟลเดอร์ + ทะเบียน Excel + จับคู่ S_Data_Loan',
     action: 'WORK1_GMAIL_PULL',
     payload: {
