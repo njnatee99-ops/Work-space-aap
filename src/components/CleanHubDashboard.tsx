@@ -18,6 +18,7 @@ import { GatewayConfig } from '../types';
 import { MANIFEST_FILE_NAME } from '../services/backendGateway';
 import { LiquidButton } from './ui/liquid-glass-button';
 import { GlassBox } from './ui/glass-box';
+import { CrdLiveOperationsPanel } from './CrdLiveOperationsPanel';
 
 interface CleanHubDashboardProps {
   config: GatewayConfig;
@@ -254,6 +255,9 @@ export const CleanHubDashboard: React.FC<CleanHubDashboardProps> = ({
           );
         })}
       </div>
+
+      {/* Live Dispatch Operations Panel (Separated per Workstream) */}
+      <CrdLiveOperationsPanel />
 
       {/* Target Drive Location Info Banner (GlassBox) */}
       <GlassBox variant="subtle" className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">

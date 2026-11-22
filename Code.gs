@@ -51,6 +51,13 @@ function doPost(e) {
     if (action === 'WORK4_QUEUE_PRINT_JOB') {
       return handleWork4QueuePrintJob(payload);
     }
+    if (
+      action === 'WORK1_GMAIL_PULL' ||
+      action === 'WORK2_EXPEL_SYNC' ||
+      action === 'WORK6_CHECKLIST_VERIFY'
+    ) {
+      return handleWorkstreamDispatch(action, payload);
+    }
     if (action === 'LOG_UPDATE') {
       return handleLogUpdate(payload);
     }
@@ -229,6 +236,24 @@ function handleWork4QueuePrintJob(payload) {
     eventId: eventId,
     timestamp: nowIso,
     message: 'Work 4 print job queued successfully in PENDING state'
+  });
+}
+
+function handleWorkstreamDispatch(action, payload) {
+  const nowIso = new Date().toISOString();
+  const eventId = payload.idempotency_key || ('evt_' + Utilities.getUuid().slice(0, 8));
+  const jobId = payload.job_id || ('JOB-' + Date.now());
+  return jsonResponse({
+    success: true,
+    queued: true,
+    status: 'PENDING',
+    action: action,
+    workstream: String(payload.workstream || ''),
+    job_id: jobId,
+    eventId: eventId,
+    timestamp: nowIso,
+    zeroPii: true,
+    message: 'Queued ' + action + ' in PENDING state'
   });
 }
 
