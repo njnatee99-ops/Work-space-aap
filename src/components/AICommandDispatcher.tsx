@@ -22,6 +22,8 @@ export const AICommandDispatcher: React.FC<AICommandDispatcherProps> = ({ onOpen
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [savedToDrive, setSavedToDrive] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [dispatchStatus, setDispatchStatus] = useState<string | null>(null);
   const [addedToScope, setAddedToScope] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -76,14 +78,72 @@ export const AICommandDispatcher: React.FC<AICommandDispatcherProps> = ({ onOpen
   };
 
   const handleSaveToDrive = async () => {
-    if (!aiResult) return;
-    setSavedToDrive(true);
-    await backendGateway.dispatchAction('DEPLOY_AI_SCOPE', {
-      aiResult,
-      targetManifest: '00_Project_Manifest.json',
-      folderId: '1RvGehvlDrPTaR9JvQgCcFPqiQbRE8_yn',
-    });
-    setTimeout(() => setSavedToDrive(false), 5000);
+    if (!aiResult || isDispatching) return;
+    setIsDispatching(true);
+    setDispatchStatus(null);
+    setErrorMsg(null);
+    try {
+      // 1. Add scope locally to app state immediately
+      const newScope: ScopeItem = {
+        id: aiResult.id,
+        title: aiResult.title,
+        gate: aiResult.gate,
+        rule: aiResult.rule,
+        status: 'ACTIVE_SYNCED',
+        updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      };
+      backendGateway.addScope(newScope);
+      setAddedToScope(true);
+
+      // 2. Persist real spec to 00_Project_Manifest.json via supported GAS action DEPLOY_EVOLVED_UI_DESIGN
+      const manifestRes = await backendGateway.dispatchAction('DEPLOY_EVOLVED_UI_DESIGN', {
+        componentId: aiResult.id,
+        spec: {
+          componentId: aiResult.id,
+          title: aiResult.title,
+          category: 'AI_SCOPE',
+          gate: aiResult.gate,
+          summary: aiResult.rule,
+          rule: aiResult.rule,
+          actionPrompt: aiResult.actionPrompt,
+        },
+        targetManifest: '00_Project_Manifest.json',
+        workspaceId: '1RvGehvlDrPTaR9JvQgCcFPqiQbRE8_yn',
+        timestamp: new Date().toISOString(),
+      });
+
+      // 3. Submit automated job to CMS-2 / GAS Queue (SUBMIT_JOB) so user never has to copy-paste manually
+      const jobRes = await backendGateway.dispatchAction('SUBMIT_JOB', {
+        jobType: 'AI_SCOPE_EXECUTION',
+        scopeId: aiResult.id,
+        title: aiResult.title,
+        gate: aiResult.gate,
+        rule: aiResult.rule,
+        actionPrompt: aiResult.actionPrompt,
+        source: 'CRD_WEB_AUTO_DISPATCH',
+        timestamp: new Date().toISOString(),
+      });
+
+      const manifestOk = Boolean(manifestRes?.success && (manifestRes.log?.response?.manifestUpdated !== false));
+      const jobOk = Boolean(jobRes?.success);
+
+      if (manifestOk || jobOk) {
+        setSavedToDrive(true);
+        setDispatchStatus(
+          manifestOk && jobOk
+            ? 'ส่งต่ออัตโนมัติสำเร็จ (บันทึก Manifest + เข้าคิวรันงานแล้ว)'
+            : manifestOk
+              ? 'บันทึก Manifest บน Drive สำเร็จ (รอคิวเชื่อมต่อ)'
+              : 'ส่งเข้าคิวรันงานอัตโนมัติสำเร็จ'
+        );
+      } else {
+        setErrorMsg('ไม่สามารถส่งคำสั่งไปยัง Gateway ได้ กรุณาตรวจการเชื่อมต่อในหน้าหลังบ้าน');
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดขณะส่งต่อสโคปงานอัตโนมัติ');
+    } finally {
+      setIsDispatching(false);
+    }
   };
 
   const handleAddDirectlyToApp = () => {
@@ -238,37 +298,60 @@ export const AICommandDispatcher: React.FC<AICommandDispatcherProps> = ({ onOpen
             </div>
           </div>
 
-          {/* 1-Click Action Buttons */}
+          {/* 1-Click Automated Scope Dispatch Buttons */}
+          {dispatchStatus && (
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                {dispatchStatus}
+              </span>
+              <button
+                type="button"
+                onClick={onOpenLogsModal}
+                className="underline font-bold shrink-0 cursor-pointer"
+              >
+                ดู Log
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={handleAddDirectlyToApp}
-              disabled={addedToScope}
-              className={`px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-all ${
+              disabled={addedToScope || isDispatching}
+              className={`touch-target px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-all ${
                 addedToScope
                   ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
                   : 'bg-white hover:bg-slate-50 border-blue-200 text-slate-800 shadow-2xs'
               }`}
             >
               {addedToScope ? <Check className="w-4 h-4 text-emerald-600" /> : <PlusCircle className="w-4 h-4 text-blue-600" />}
-              <span>{addedToScope ? 'เพิ่มในแอปแล้ว' : '+ เพิ่มเป็นขอบเขตงานในแอป'}</span>
+              <span>{addedToScope ? 'เพิ่มในแอปแล้ว' : '+ เพิ่มเฉพาะในแอป'}</span>
             </button>
 
             <LiquidButton
               size="default"
+              variant="glowing"
+              glow={!savedToDrive}
               onClick={handleSaveToDrive}
-              disabled={savedToDrive}
-              className="text-xs font-bold shadow-md cursor-pointer"
+              disabled={isDispatching}
+              className="touch-target text-xs font-bold shadow-md cursor-pointer"
             >
-              {savedToDrive ? (
+              {isDispatching ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                  <span>กำลังรันส่งต่อสโคปอัตโนมัติ...</span>
+                </>
+              ) : savedToDrive ? (
                 <>
                   <Check className="w-4 h-4 text-emerald-600" />
-                  <span>บันทึกลง Drive เรียบร้อยแล้ว</span>
+                  <span>ส่งต่อสโคปอัตโนมัติสำเร็จ (ส่งซ้ำได้)</span>
                 </>
               ) : (
                 <>
-                  <FolderGit2 className="w-4 h-4 text-blue-600" />
-                  <span>บันทึกลง 00_Project_Manifest.json บน Drive</span>
+                  <Send className="w-4 h-4 text-blue-600" />
+                  <span>รันส่งต่อสโคปงานอัตโนมัติ (Manifest + คิวงาน)</span>
                 </>
               )}
             </LiquidButton>
