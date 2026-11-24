@@ -1,21 +1,14 @@
 import React from 'react';
 import {
-  Sparkles,
-  PlusCircle,
-  ShieldCheck,
-  Code2,
-  Terminal,
-  Settings,
   Layers,
-  CheckCircle2,
   ChevronRight,
-  Download,
   Bot,
-  Box,
-  Printer
+  Printer,
+  Settings,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 import { GatewayConfig } from '../types';
-import { MANIFEST_FILE_NAME } from '../services/backendGateway';
 import { LiquidButton } from './ui/liquid-glass-button';
 import { GlassBox } from './ui/glass-box';
 import { CrdLiveOperationsPanel } from './CrdLiveOperationsPanel';
@@ -34,6 +27,7 @@ interface CleanHubDashboardProps {
       | 'stop-gates'
       | 'gascode'
       | 'proposed-work'
+      | 'admin-hub'
   ) => void;
   onOpenGatewayModal: () => void;
   onOpenLogsModal: () => void;
@@ -42,237 +36,126 @@ interface CleanHubDashboardProps {
 }
 
 export const CleanHubDashboard: React.FC<CleanHubDashboardProps> = ({
-  scopesCount,
-  logCount,
   onNavigate,
-  onOpenGatewayModal,
-  onOpenLogsModal,
-  onOpenExportModal,
 }) => {
-  const menuCards = [
+  // หน้าบ้าน (Front-of-House): เฉพาะงานปฏิบัติการหลักที่ใช้งานจริงทุกวัน ไม่ปนโค้ดหรือเครื่องมือหลังบ้าน
+  const frontOperations = [
     {
-      id: 'work4-studio',
-      title: 'WORK 4: ห้องควบคุมงานพิมพ์จดหมาย 9 หมวด & EMS',
-      desc: 'เลือกหมวดผู้รับ 9 หมวด (2/4/5 งวด × ผู้กู้/กู้ร่วม/ผู้ค้ำ) ตรวจเลขสมาชิก 5 หลัก รันเลข ก.2 พรีวิวคู่ และสั่งพิมพ์ผ่าน Local Gateway (CMS-2 / LetterPrint.ps1)',
+      id: 'proposed-work' as const,
+      title: 'ศูนย์ปฏิบัติการ WORK 1–9',
+      subtitle: 'งานพ้นสมาชิกภาพ · ติดตามหนี้ · เมลสาขา · ผ่อนผัน',
+      badge: '9 สายงานหลัก',
+      icon: <Layers className="w-6 h-6 text-blue-600 dark:text-teal-400" />,
+      actionText: 'เข้าหน้าปฏิบัติการ WORK 1–9',
+      highlight: true,
+    },
+    {
+      id: 'work4-studio' as const,
+      title: 'ห้องพิมพ์จดหมาย WORK 4 & EMS',
+      subtitle: 'เลือกหมวดผู้รับ 9 หมวด ตรวจเลขสมาชิก 5 หลัก พรีวิวคู่ก่อนพิมพ์',
       badge: 'CMS-2 · 9 หมวด',
-      badgeColor: 'bg-white/85 text-blue-900 border-slate-200/90 font-bold',
-      icon: <Printer className="w-6 h-6 text-blue-600 dark:text-teal-400" />,
-      onClick: () => onNavigate('work4-studio'),
-      actionText: 'เปิดห้องควบคุมงานพิมพ์ WORK 4',
-      hasHighlight: true,
-      highlightTag: 'พร้อมใช้งานจริง',
+      icon: <Printer className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
+      actionText: 'เปิดห้องพิมพ์จดหมาย',
+      highlight: false,
     },
     {
-      id: 'proposed-work',
-      title: 'ศูนย์ปฏิบัติการสายงานจริง CRD WORK 1–9',
-      desc: 'เข้าหน้าจอทำงานจริงของ WORK 1–9 ทุกสายงาน (แยก พม. เดี่ยว/ร่วม, ค้ำประกันไขว้, กฎ V003, รับไฟล์สาขา) พร้อมซิงก์ลง 00_Project_Manifest.json',
-      badge: '9 สายงานปฏิบัติการ',
-      badgeColor: 'bg-white/85 text-indigo-900 border-slate-200/90 font-bold',
-      icon: <Layers className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      onClick: () => onNavigate('proposed-work'),
-      actionText: 'เปิดศูนย์ปฏิบัติการ WORK 1–9',
-      hasHighlight: false,
-    },
-    {
-      id: 'ai-chat',
-      title: 'ผู้ช่วย Gemini AI Chatbot',
-      desc: 'สนทนาหลายรอบ (Multi-turn) เลือกบทบาทผู้เชี่ยวชาญ CRD แปลงคำตอบเป็นขอบเขตงานและซิงก์เข้า Firestore ได้ทันที',
-      badge: 'Gemini 4 Hydrogen',
-      badgeColor: 'bg-white/85 text-blue-900 border-slate-200/90 font-bold',
-      icon: <Bot className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-      onClick: () => onNavigate('ai-chat'),
-      actionText: 'เปิดผู้ช่วย AI Chatbot',
-      hasHighlight: false,
-    },
-    {
-      id: '3d-view',
-      title: 'สถาปัตยกรรม CRD 3 มิติ (Three.js)',
-      desc: 'สำรวจแกนกลาง Dual-Key Ledger สายงาน WORK 1–9 และวงแหวน 16 Stop Gates แบบ 3 มิติ โต้ตอบหมุนและคลิกตรวจแต่ละด่านได้',
-      badge: 'Interactive 3D',
-      badgeColor: 'bg-white/85 text-indigo-900 border-slate-200/90 font-bold',
-      icon: <Box className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      onClick: () => onNavigate('3d-view'),
-      actionText: 'เข้าดูโมเดล CRD 3 มิติ',
-      hasHighlight: false,
-    },
-    {
-      id: 'ai-studio',
-      title: 'สั่ง Google AI ออกแบบ UI ในแอป',
-      desc: 'ระบบอ่านโค้ดของตัวเองแบบ Introspection แล้วให้ AI สังเคราะห์หน้าจอใหม่และสเปกขอบเขตงานได้ทันที',
-      badge: 'Gemini 4 Hydrogen',
-      badgeColor: 'bg-white/85 text-blue-900 border-slate-200/90 font-bold',
-      icon: <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-      onClick: () => onNavigate('ai-studio'),
-      actionText: 'สั่ง AI ออกแบบ UI',
-      hasHighlight: false,
-    },
-    {
-      id: 'scope-builder',
-      title: 'เพิ่มขอบเขตงาน (Scope Builder)',
-      desc: 'แม่แบบขอบเขตงานด่วน WORK 1 (แยก พม.), WORK 4 (พิมพ์จดหมาย 9 หมวด), กฎ V003 และฟอร์มยิงขอบเขตงานเข้า Drive',
-      badge: `${scopesCount} ขอบเขตงาน`,
-      badgeColor: 'bg-white/85 text-slate-800 border-slate-200/90 font-bold',
-      icon: <PlusCircle className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-      onClick: () => onNavigate('scope-builder'),
-      actionText: 'จัดการขอบเขตงาน',
-      hasHighlight: false,
-    },
-    {
-      id: 'stop-gates',
-      title: 'ตรวจ 16 ด่าน Stop Gates & PDPA',
-      desc: 'ระบบ 01–04 (Leading Zero 5 หลัก, คีย์สัญญา Dual-Key, PDPA Zero-PII ปลอดข้อมูลส่วนบุคคล) และเมทริกซ์ 16 ด่านควบคุม',
-      badge: '16/16 ผ่านตรวจ',
-      badgeColor: 'bg-white/85 text-emerald-800 border-slate-200/90 font-bold',
-      icon: <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />,
-      onClick: () => onNavigate('stop-gates'),
-      actionText: 'ตรวจสอบ 16 ด่าน',
-      hasHighlight: false,
-    },
-    {
-      id: 'gascode',
-      title: 'โค้ด Google Apps Script (Code.gs)',
-      desc: 'ดูและคัดลอก Source Code ของ Apps Script Web App 1-Click สำหรับรับคำสั่งและซิงก์ Manifest สู่ Google Drive',
-      badge: 'พร้อมคัดลอกใช้งาน',
-      badgeColor: 'bg-white/85 text-amber-900 border-slate-200/90 font-bold',
-      icon: <Code2 className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
-      onClick: () => onNavigate('gascode'),
-      actionText: 'ดูโค้ด Code.gs',
-      hasHighlight: false,
-    },
-    {
-      id: 'payloads',
-      title: 'ประวัติคำสั่ง (Live Payloads)',
-      desc: 'บันทึกประวัติคำสั่ง Payload และ Response ที่ส่งไปและกลับจาก Google Apps Script พร้อมรายละเอียดมิลลิวินาที',
-      badge: `${logCount} รายการบันทึก`,
-      badgeColor: 'bg-white/85 text-slate-800 border-slate-200/90 font-bold',
-      icon: <Terminal className="w-6 h-6 text-slate-700 dark:text-slate-300" />,
-      onClick: onOpenLogsModal,
-      actionText: 'ดูประวัติ Payloads',
-      hasHighlight: false,
+      id: 'ai-chat' as const,
+      title: 'ผู้ช่วย AI แชท CRD',
+      subtitle: 'ถาม-ตอบกฎระเบียบ สรุปงาน และส่งขอบเขตงานเข้าระบบ',
+      badge: 'AI Assistant',
+      icon: <Bot className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />,
+      actionText: 'เปิดแชทผู้ช่วย AI',
+      highlight: false,
     },
   ];
 
   return (
-    <section className="space-y-6">
-      {/* Expanded Clean Header Banner */}
-      <GlassBox variant="frosted" className="p-6 sm:p-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-white/90 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
-                CRD WEB · NexusLedger Hub
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">· ศูนย์รวมพัฒนา CRD WEB</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#14243A] dark:text-white">
-              เลือกเมนูเพื่อเริ่มใช้งานหรือสั่งงานระบบ
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-              รวมโมดูล CRD WEB ทั้งผู้ช่วย Gemini AI, ภาพสถาปัตยกรรม 3 มิติ, ตัวสร้างขอบเขตงาน และ 16 ด่าน Stop Gates พร้อมซิงก์เข้า Cloud Firestore และ Google Drive
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {onOpenExportModal && (
-              <LiquidButton
-                size="default"
-                onClick={onOpenExportModal}
-                className="text-xs font-bold cursor-pointer"
-              >
-                <Download className="w-4 h-4 text-emerald-600" />
-                <span>วิธีเอาโค้ดไปใช้</span>
-              </LiquidButton>
-            )}
-            <LiquidButton
-              size="default"
-              onClick={onOpenGatewayModal}
-              className="text-xs font-bold cursor-pointer"
-            >
-              <Settings className="w-4 h-4 text-blue-600" />
-              <span>ตั้งค่า Gateway</span>
-            </LiquidButton>
-          </div>
+    <section className="space-y-5">
+      {/* Compact Hero Header for iPhone 15 Pro Max (No Clutter, No Template Badges) */}
+      <GlassBox variant="frosted" className="p-5 sm:p-6 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 dark:text-teal-300">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            หน้าบ้านปฏิบัติการจริง (Front Office)
+          </span>
+          <button
+            type="button"
+            onClick={() => onNavigate('admin-hub')}
+            className="touch-target inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100/90 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 cursor-pointer"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>ไปหลังบ้าน</span>
+          </button>
         </div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#14243A] dark:text-white">
+          เลือกสายงานที่ต้องการดำเนินการ
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+          รวมงานปฏิบัติการจริง WORK 1–9, พิมพ์จดหมาย EMS และผู้ช่วย AI ไว้หน้าเดียว ส่วนตั้งค่า Gateway, โค้ด และ Logs แยกไปไว้หน้าหลังบ้านเรียบร้อยแล้ว
+        </p>
       </GlassBox>
 
-      {/* Grid of Expanded Liquid Glass Menu Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {menuCards.map((card) => {
-          const isHighlighted = card.hasHighlight;
-          return (
-            <GlassBox
-              key={card.id}
-              variant="default"
-              interactive={true}
-              onClick={card.onClick}
-              className="group"
-            >
-              <div className="p-6 sm:p-7 flex flex-col justify-between space-y-5 h-full">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-200/55 dark:bg-slate-900 border border-white/95 dark:border-slate-800 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95)] group-hover:scale-105 transition-transform backdrop-blur-xl">
-                      {card.icon}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {card.highlightTag && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/65 text-slate-800 border border-white/95 shadow-2xs backdrop-blur-md">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          {card.highlightTag}
-                        </span>
-                      )}
-                      <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border shadow-2xs backdrop-blur-md ${card.badgeColor}`}>
-                        {card.badge}
-                      </span>
-                    </div>
+      {/* Primary Front-of-House Action Cards (Large Touch Targets for iPhone 15 Pro Max) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {frontOperations.map((card) => (
+          <GlassBox
+            key={card.id}
+            variant="default"
+            interactive={true}
+            onClick={() => onNavigate(card.id)}
+            className="group"
+          >
+            <div className="p-5 flex flex-col justify-between space-y-4 h-full">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-100/90 dark:bg-slate-900 border border-white dark:border-slate-800 shadow-2xs">
+                    {card.icon}
                   </div>
-
-                  <div className="space-y-2">
-                    <h3 className="text-base sm:text-lg font-bold text-[#14243A] dark:text-white group-hover:text-blue-700 dark:group-hover:text-teal-300 transition-colors flex items-center gap-2">
-                      <span>{card.title}</span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      {card.desc}
-                    </p>
-                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/90 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700">
+                    {card.badge}
+                  </span>
                 </div>
-
-                {/* Frosted Cloudy Liquid Button CTA inside each Card */}
-                <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between gap-2">
-                  <LiquidButton
-                    size="default"
-                    variant={isHighlighted ? "glowing" : "default"}
-                    glow={isHighlighted}
-                    beacon={isHighlighted}
-                    className="w-full text-xs font-bold cursor-pointer"
-                  >
-                    <span>{card.actionText}</span>
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </LiquidButton>
+                <div className="space-y-1">
+                  <h2 className="text-base font-bold text-[#14243A] dark:text-white group-hover:text-blue-700 dark:group-hover:text-teal-300 transition-colors">
+                    {card.title}
+                  </h2>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {card.subtitle}
+                  </p>
                 </div>
               </div>
-            </GlassBox>
-          );
-        })}
+
+              <LiquidButton
+                size="default"
+                variant={card.highlight ? 'glowing' : 'default'}
+                glow={card.highlight}
+                className="touch-target w-full text-xs font-bold cursor-pointer"
+              >
+                <span>{card.actionText}</span>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </LiquidButton>
+            </div>
+          </GlassBox>
+        ))}
       </div>
 
       {/* Live Dispatch Operations Panel (Separated per Workstream) */}
       <CrdLiveOperationsPanel />
 
-      {/* Target Drive Location Info Banner (GlassBox) */}
-      <GlassBox variant="subtle" className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-        <div className="flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="text-slate-700 dark:text-slate-300">
-            โฟลเดอร์ Google Drive: <strong className="text-blue-900 dark:text-slate-100 font-bold">AI_Project_Workspace</strong>
-          </span>
-        </div>
+      {/* Compact Safety Footer Pill */}
+      <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <span className="text-slate-700 dark:text-slate-300">
-            ไฟล์ Manifest: <strong className="text-blue-700 dark:text-teal-400 font-bold">{MANIFEST_FILE_NAME}</strong>
-          </span>
+          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>มาตรฐาน Zero-PII & Read-Only 100%</span>
         </div>
-      </GlassBox>
+        <button
+          type="button"
+          onClick={() => onNavigate('admin-hub')}
+          className="font-semibold text-blue-700 dark:text-teal-400 hover:underline cursor-pointer"
+        >
+          จัดการหลังบ้าน →
+        </button>
+      </div>
     </section>
   );
 };

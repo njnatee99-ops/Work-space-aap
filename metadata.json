@@ -1,6 +1,6 @@
 {
-  "name": "NexusLedger Enterprise Dark",
-  "description": "Next-Gen Automated Smart Contract Governance, Bento Grid, 3D Cryptographic Node, and User Backend Gateway.",
+  "name": "CRD Work Center",
+  "description": "ศูนย์ปฏิบัติการ CRD WORK 1–9 แยกหน้าบ้านปฏิบัติการและหลังบ้านระบบ รองรับ iPhone 15 Pro Max เต็มหน้าจอ",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
